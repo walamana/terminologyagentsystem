@@ -5,7 +5,6 @@ import dotenv
 from openai import OpenAI, AsyncOpenAI, RateLimitError
 import httpx
 import json
-from gpt4all import GPT4All
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionContentPartParam
 
 dotenv.load_dotenv()
