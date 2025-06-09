@@ -1,0 +1,182 @@
+<div style="margin: 10px 20px; font-family: sans-serif">
+
+    <h1>Demo TAS</h1>
+
+    <div>
+        <h3>Beispiele</h3>
+        <p>
+            Brauch i mal 3 Führer, da erste nimmd si 247 ZickZack 211/2 Kuppeln Voll 39798, die anderen zwei nehmen sich den Vollzug im Waschgleis in den Westen zwei Teile, der erste geht nach 205/1 kuppeln Lang 39702. Der zweite vom Westen geht Osten Halle 5/3
+        </p>
+        <p>
+            Virtuelle Blockstellen sind eingerichtet an Stellen, die mit einem allein stehenden Signal Ne 14 oder einem Blockkennzeichen gekennzeichnet sind.
+        </p>
+        <p>
+            Die El-Signale sind ausgefallen, wir müssen jetzt auf Sicht fahren.git
+        </p>
+    </div>
+    <div style="margin-bottom: 20px">
+        <textarea style="width: 100%; height: 100px; display: block" placeholder="Input Text">Wegen der Beladung können die Baustoffe hier nicht mehr rauf.</textarea>
+        <button id="submit-text">Submit</button>
+    </div>
+
+    <div>
+        <input type="file" accept="application/pdf">
+        <button id="submit-doc">Submit</button>
+    </div>
+
+    <h3>Terms</h3>
+    <div class="terms"></div>
+</div>
+<script>
+
+    const textarea = document.querySelector('textarea');
+    const submitText = document.querySelector('#submit-text');
+    const submitDoc = document.querySelector('#submit-doc');
+    const fileInput = document.querySelector('input[type=file]');
+
+    const terms = document.querySelector('.terms');
+
+    submitText.addEventListener('click', () => {
+        const text = textarea.value;
+        submitText.disabled = true;
+        submitDoc.disabled = true;
+        terms.innerHTML = "loading..."
+        fetch('http://localhost:8000/simple?text=' + encodeURIComponent(text))
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                submitText.disabled = false;
+                submitDoc.disabled = false;
+                showResult(data)
+            })
+    })
+
+    submitDoc.addEventListener('click', () => {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        submitText.disabled = true;
+        submitDoc.disabled = true;
+        terms.innerHTML = "loading..."
+        fetch('http://localhost:8000/processFile', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                submitText.disabled = false;
+                submitDoc.disabled = false;
+                showResult(data)
+            })
+    })
+
+
+
+    // window.addEventListener('load', () => {
+    //     showResult({
+    //         terms: [
+    //             {
+    //                 text: "Beladungen",
+    //                 normalization: "Beladung",
+    //                 occurrences: [],
+    //                 definitions: [
+    //                     {
+    //                         text: "Beladung",
+    //                         partial: false,
+    //                         verified: false,
+    //                     }
+    //                 ]
+    //             },
+    //             {
+    //                 text: "Beladungen",
+    //                 normalization: "Beladung",
+    //                 occurrences: [],
+    //                 definitions: [
+    //                     {
+    //                         text: "Beladung",
+    //                         partial: false,
+    //                         verified: false,
+    //                     }
+    //                 ]
+    //             }
+    //         ]
+    //     })
+    // })
+
+    function showResult(data) {
+        data.terms = data.terms.sort((a, b) => {
+            const textA = a.normalization ? a.normalization : a.text;
+            const textB = b.normalization ? b.normalization : b.text;
+            return textA.localeCompare(textB);
+        })
+        let termsHtml = ""
+        for (let term of data.terms) {
+            let definitionHtml = ""
+            for (let definition of term.definitions) {
+                definitionHtml += `
+<div class="definition">
+    <span>${definition.verified ? "✅" : "✨"}${definition.partial ? "⚙️" : ""} ${definition.text}</span>
+    <span class="partial">Partial ${definition.partial}, Verified ${definition.verified}</span>
+</div>`
+            }
+
+            termsHtml += `
+<div class="term">
+    <span class="text">${term.normalization ? term.normalization : term.text}</span>
+    <span class="lemma">Lemmatized: <strong>${term.normalization}</strong>, Occures in ${term.occurrences.length} sources</span>
+    <span class="occurrences"></span>
+    <div class="definitions">
+        ${definitionHtml}
+    </div>
+</div>`
+        }
+        terms.innerHTML = termsHtml
+    }
+</script>
+
+<style>
+
+    .terms {
+        display: flex;
+        flex-direction: column;
+
+        .term {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 20px;
+            width: calc(100% - 40px);
+
+            &:not(:last-child) {
+                border-bottom: 1px solid #e5e5e5;
+            }
+
+            &:nth-child(2n) {
+                background: #f5f5f5
+            }
+
+            .text {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+            .lemma, .occurrences {
+                opacity: 0.5;
+            }
+            .definitions {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-top: 4px;
+            }
+            .definition {
+                display: flex;
+                flex-direction: column;
+                margin-left: 20px;
+                .partial, .verified {
+                    opacity: 0.5;
+                }
+            }
+
+        }
+    }
+</style>
