@@ -5,36 +5,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from src.service.event import Handler, Event, EventDispatcher
-
-
-class TextSource(BaseModel):
-    id: UUID = Field(UUID)
-    text: str
-
-
-class Definition(BaseModel):
-    text: str
-    verified: bool
-    partial: bool
-    source: Optional[TextSource | Any] = None
-
-    def is_combined(self) -> bool:
-        return not self.verified and not self.partial
-
-    def is_partial(self) -> bool:
-        return not self.verified and self.partial
-
-
-class Term(BaseModel):
-    id: Annotated[UUID, Field(default_factory=uuid.uuid4)]
-    text: str
-    normalization: Optional[str] = None
-    occurrences: Annotated[List[UUID], Field(default_factory=list)]
-    definitions: Annotated[List[Definition], Field(default_factory=list)]
-
-    def normalized_or_text(self):
-        return self.normalization if self.normalization is not None else self.text
+from src.terminology.event import Handler, Event, EventDispatcher, DocumentAdded, TextExtracted, TermExtracted, \
+    OccurrenceResolved, PartialDefinitionGenerated, TermNormalized
+from src.terminology.models import Term, TextSource, Definition
 
 
 class Blackboard(BaseModel):
@@ -56,6 +29,12 @@ class Blackboard(BaseModel):
         self.sources.append(source)
         return source
 
+    def get_text_source(self, id: UUID) -> Optional[TextSource]:
+        for source in self.sources:
+            if source.id == id:
+                return source
+        return None
+
 
 class KnowledgeSource(Handler):
     blackboard: Blackboard
@@ -63,44 +42,6 @@ class KnowledgeSource(Handler):
     class Config:
         arbitrary_types_allowed = True
 
-
-class DocumentAdded(Event):
-    path: str
-
-
-class TextExtracted(Event):
-    text: str
-
-
-class TermExtracted(Event):
-    term: Term
-
-
-class TermsExtracted(Event):
-    terms: List[TermExtracted]
-
-
-class TermNormalized(Event):
-    term: Term
-
-
-class OccurrenceResolved(Event):
-    term: Term
-    source: TextSource
-
-class VerifiedDefinitionResolved(Event):
-    term: Term
-    definition: Definition
-
-class PartialDefinitionGenerated(Event):
-    term: Term
-    definition: Definition
-
-
-class CombinedDefinitionGenerated(Event):
-    term: Term
-    combined_definition: Definition
-    relevant_definitions: List[Definition]
 
 
 class TextExtractor(KnowledgeSource):
@@ -127,7 +68,7 @@ class TermNormalizer(KnowledgeSource):
 class OccurrenceResolver(KnowledgeSource):
     handles: Annotated[List[Type[Event]], Field(default_factory=lambda: [TermExtracted, TermNormalized])]
 
-    async def activate(self, event: Event) -> AsyncIterable[Event]:
+    async def activate(self, event: TermExtracted | TermNormalized) -> AsyncIterable[Event]:
         yield
 
 

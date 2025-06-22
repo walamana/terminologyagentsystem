@@ -14,8 +14,8 @@ from fastapi import FastAPI, UploadFile
 from pydantic import BaseModel
 from starlette.staticfiles import StaticFiles
 
-from src.service.session import SessionManager, KnowledgeSourcePolicy
-from src.service.terminology import Blackboard
+from src.terminology.session import SessionManager, KnowledgeSourcePolicy
+from src.terminology.terminology import Blackboard
 
 app = FastAPI()
 
@@ -41,7 +41,7 @@ async def process_file(file: UploadFile) -> Blackboard:
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    session = SessionManager.create_session(KnowledgeSourcePolicy())
+    session = SessionManager.create_session(KnowledgeSourcePolicy(use_llm=True))
 
     blackboard = await session.process_document(file_path)
 

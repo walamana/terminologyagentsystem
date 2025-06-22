@@ -1,14 +1,15 @@
 import asyncio
 import os
+import tempfile
 from pathlib import Path
 from typing import AsyncIterable
 
 from pypdf import PdfReader, PdfWriter
 from docling.document_converter import  DocumentConverter
 
-from src.service.event import Event
+from src.terminology.event import Event
 from src.logger import logger
-from src.service.terminology import DocumentAdded, TextExtracted, TextExtractor
+from src.terminology.terminology import DocumentAdded, TextExtracted, TextExtractor, Blackboard
 
 # The internal lock of tqdm has to be initialized, otherwise docling fails. TODO: why exactly?
 # see: https://github.com/tqdm/tqdm/issues/457
@@ -37,7 +38,8 @@ class Pdf2Text(TextExtractor):
         return paths
 
     async def activate(self, event: DocumentAdded) -> AsyncIterable[Event]:
-        paths = self.split_into_pages(event.path, "../../tmp")
+
+        paths = self.split_into_pages(event.path, tempfile.gettempdir())
 
         logger.info(f"Found {len(paths)} pages in {event.path}")
 
@@ -47,3 +49,18 @@ class Pdf2Text(TextExtractor):
             path, text = await task
             os.unlink(path)
             yield TextExtracted(text=text)
+
+
+if __name__ == "__main__":
+    blackboard = Blackboard()
+    pdf2text = Pdf2Text(blackboard=blackboard)
+
+
+    async def test():
+        counter = 0
+        async for event in pdf2text.activate(DocumentAdded(path="./../../data/Handbuch-40820-data_43.pdf")):
+            counter += 1
+            with open(f"./../../data/Handbuch-40820-data_43-{counter}.txt", "w") as f:
+                f.write(event.text)
+
+    asyncio.run(test())

@@ -12,14 +12,16 @@ dotenv.load_dotenv()
 client = AsyncOpenAI()
 
 @backoff.on_exception(backoff.expo, RateLimitError)
-async def create_completion_openai(model: str,
+async def create_completion_openai(
                              messages: list[Tuple[str, str]],
-                             temperature=0.41,
+                             model: str = "gpt-4o-mini",
+                             temperature=0.2,
                              max_completion_tokens=2048,
                              top_p=0.7,
                              frequency_penalty=0,
                              presence_penalty=0,
-                             store=False
+                             store=False,
+                            logprobs=False,
                              ):
     response = await client.chat.completions.create(
         model=model,
@@ -35,6 +37,12 @@ async def create_completion_openai(model: str,
         top_p=top_p,
         frequency_penalty=frequency_penalty,
         presence_penalty=presence_penalty,
-        store=store
+        store=store,
+        logprobs=logprobs,
+        top_logprobs=5 if logprobs else None
     )
-    return response.choices[0].message.content
+
+    if logprobs:
+        return response.choices[0].message.content, response.choices[0].logprobs
+    else:
+        return response.choices[0].message.content

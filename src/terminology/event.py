@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from src.logger import logger
+from src.terminology.models import Term, TextSource, Definition
 
 load_dotenv()
 debug = os.getenv("DEBUG") == "true"
@@ -23,6 +24,44 @@ class Handler(BaseModel):
     async def activate(self, event: Event) -> AsyncIterable[Event]:
         yield None
 
+
+class DocumentAdded(Event):
+    path: str
+
+
+class TextExtracted(Event):
+    text: str
+
+
+class TermExtracted(Event):
+    term: Term
+
+
+class TermsExtracted(Event):
+    terms: List[TermExtracted]
+
+
+class TermNormalized(Event):
+    term: Term
+
+
+class OccurrenceResolved(Event):
+    term: Term
+    source: TextSource
+
+class VerifiedDefinitionResolved(Event):
+    term: Term
+    definition: Definition
+
+class PartialDefinitionGenerated(Event):
+    term: Term
+    definition: Definition
+
+
+class CombinedDefinitionGenerated(Event):
+    term: Term
+    combined_definition: Definition
+    relevant_definitions: List[Definition]
 
 class EventDispatcher:
     handler: Annotated[Dict[Type[Event], List[Handler]], Field(default_factory=dict)]

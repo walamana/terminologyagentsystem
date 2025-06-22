@@ -5,10 +5,11 @@ from uuid import UUID
 from pydantic import Field
 
 from src.knowledge.definition.generator import PartialDefinitionGenerated
-from src.service.event import Event
+from src.terminology.event import Event, CombinedDefinitionGenerated
 from src.llm import create_completion_openai
 from src.logger import simple_custom_logger
-from src.service.terminology import Term, Blackboard, Definition, DefinitionCombiner, CombinedDefinitionGenerated
+from src.terminology.models import Definition, Term
+from src.terminology.terminology import DefinitionCombiner, Blackboard
 
 logger = simple_custom_logger("COMBINER")
 
@@ -39,7 +40,6 @@ class OpenAIDefinitionCombiner(DefinitionCombiner):
                     tasks = []
                     for definition in event.term.definitions:
                         task = tg.create_task(create_completion_openai(
-                            model="gpt-4o-mini",
                             messages=[
                                 ("user", f"""Ist der folgende Text eine Definition für den Begriff \"{event.term.normalized_or_text()}\"? Wenn die Definition spezifisch genug ist, beende deine Folgerung mit TRUE, ansonsten mit FALSE. 
                                 
@@ -52,7 +52,6 @@ class OpenAIDefinitionCombiner(DefinitionCombiner):
                 logger.debug(f"Relevant definitions: {relevant_definitions}")
                 relevant_definitions_text = "\n\n".join([definition.text for definition in relevant_definitions])
                 response = await create_completion_openai(
-                    model="gpt-4o-mini",
                     messages=[
                         ("system", """Nutze nur das gegebene Wissen aus den Anfragen."""),
                         ("user", f"""Erstelle eine kombinierte Definition für \"{event.term.normalized_or_text()}\" anhand der folgenden Definitionen. 

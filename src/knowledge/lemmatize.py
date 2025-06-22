@@ -1,8 +1,8 @@
 from typing import AsyncIterable
 
-from src.service.event import Event
+from src.terminology.event import Event, TermExtracted, TermNormalized
 from src.llm import create_completion_openai
-from src.service.terminology import TermExtracted, TermNormalized, TermNormalizer
+from src.terminology.terminology import TermNormalizer
 
 developer_prompt = """
 You are an expert in linguistics and languages.
@@ -49,7 +49,6 @@ class OpenAILemmatizer(TermNormalizer):
             ("user", event.term.text)
         ]
         response = await create_completion_openai(
-            model="gpt-4o-mini",
             messages=messages,
         )
         event.term.normalization = response

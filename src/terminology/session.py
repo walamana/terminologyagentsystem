@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 from src.knowledge.definition.combiner import OpenAIDefinitionCombiner
 from src.knowledge.definition.generator import OpenAIDefinitionGenerator
 from src.knowledge.definition.resolver import CSVDefinitionResolver
-from src.knowledge.extract import OpenAIExtractor
+from src.knowledge.document import Pdf2Text
+from src.knowledge.extract import OpenAIExtractor, CValue
 from src.knowledge.lemmatize import OpenAILemmatizer
-from src.service.terminology import Controller, Blackboard, DocumentAdded, TextExtracted
-from tests.playground import TextExporter
+from src.terminology.event import DocumentAdded, TextExtracted
+from src.terminology.terminology import Controller, Blackboard
 
 
 class KnowledgeSourcePolicy(BaseModel):
@@ -41,9 +42,6 @@ class Session(BaseModel):
     }
 
 
-
-
-
 class SessionManager:
 
     sessions = {}
@@ -51,6 +49,7 @@ class SessionManager:
     @staticmethod
     def setup_controller_llm(controller: Controller):
         controller.register_knowledge_source(OpenAIExtractor)
+        controller.register_knowledge_source(CValue)
         controller.register_knowledge_source(OpenAILemmatizer)
         # TODO: Occurrence Resolver
         controller.register_knowledge_source(OpenAIDefinitionGenerator)
@@ -60,6 +59,7 @@ class SessionManager:
     def base_controller() -> Controller:
         controller = Controller()
         controller.register_knowledge_source(CSVDefinitionResolver)
+        controller.register_knowledge_source(Pdf2Text)
         return controller
 
     @classmethod

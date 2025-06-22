@@ -2,7 +2,8 @@ from typing import Annotated, List
 
 from pydantic import Field
 
-from src.service.terminology import TermExtracted, OccurrenceResolver, OccurrenceResolved
+from src.terminology.terminology import TermExtracted, OccurrenceResolver, OccurrenceResolved
+
 
 
 class MockOccurrenceResolver(OccurrenceResolver):

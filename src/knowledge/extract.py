@@ -1,23 +1,28 @@
 from typing import AsyncIterable, Any
 
+import numpy as np
 import pyate
 import spacy
 from spacy import Language
 
 from src.llm import create_completion_openai
-from src.service.event import Event
+from src.logger import simple_custom_logger
+from src.terminology.event import Event, TextExtracted, TermExtracted
 
-from src.service.terminology import TextExtracted, TermExtracted, TermExtractor, OccurrenceResolved
+from src.terminology.terminology import TermExtractor, OccurrenceResolved
+
+logger = simple_custom_logger("TERMEXTRACTOR")
 
 developer_prompt = """
-You are an expert in terminology of the rail service agencies in Europe, especially Germany. 
-Your job is to extract term candidates, abbreviations and phrases from a text. 
-You focus on terminology that is used in rail service in Germany.
-You create different grammatical versions of a term or phrase if applicable. 
-You recognize abbreviations and keep them as they are.
-You use the lemma of the words in use. You transform them into singular form.
-You extract phrases and words as well as nested terms and its single parts.
-Only return a list of terms.
+Du bist Experte für Terminologie der Eisenbahnen in Europa, insbesondere in Deutschland. 
+Deine Aufgabe besteht darin, aus einem Text Begriffe, Abkürzungen und Phrasen zu extrahieren. 
+Du extrahierst nur Terminologie, die wahrscheinlich in der Eisenbahn verwendet wird.
+Du erkennst Abkürzungen und behällst sie unverändert bei.
+Du verwendest die Lemma der jeweiligen Wörter. Du wandelst Wörter in Singular um.
+Du extrahierst Phrasen und Wörter sowie verschachtelte Begriffe und deren Einzelteile.
+Achte bei längeren Phrasen darauf, ob aus dem Text klar wird, dass es sich um einen besonderen Begriff handelt, der Wahrscheinlich verwendet wird.
+Beginne mit den Begriffen, die am wahrscheinlichsten relevant sind.
+Gib nur eine Liste von Begriffen zurück. Extrahiere nur Begriffe, die besonders für den Kontext "Bahn" sind!
 """
 
 example_user = """
@@ -40,16 +45,17 @@ class OpenAIExtractor(TermExtractor):
     async def activate(self, event: TextExtracted) -> AsyncIterable[Event]:
         source = self.blackboard.add_text_source(event.text)
         response = await create_completion_openai(
-            model="gpt-4o-mini",
             messages=[
-                ("system", f"{developer_prompt}\n{example_user}\n{output_assistant}"),
-                # ("user", example_user),
-                # ("assistant", output_assistant),
+                ("developer", f"{developer_prompt}"),
+                ("user", example_user),
+                ("assistant", output_assistant),
                 ("user", "Input: \n" + event.text)
-            ],
+            ]
         )
         response = response.split("\n")
         terms = [candidate[2:] for candidate in response if candidate.startswith("-") or candidate.startswith("*")]
+
+
 
         for term in terms:
             t = self.blackboard.find_term(term_str=term)

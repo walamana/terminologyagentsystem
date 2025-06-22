@@ -1,12 +1,14 @@
 import csv
 
-from src.service.event import Event
-from src.service.terminology import Definition, TextSource, \
-    DefinitionResolver, VerifiedDefinitionResolved
+from src.terminology.event import Event, VerifiedDefinitionResolved
 
 from typing import Annotated, AsyncIterable, Optional, Any
 
 from pydantic import Field
+
+from src.terminology.models import TextSource, Definition
+from src.terminology.terminology import DefinitionResolver
+
 
 class CSVDefinitionResolver(DefinitionResolver):
     definitions: Annotated[dict, Field(default_factory=dict)]

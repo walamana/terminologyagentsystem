@@ -1,9 +1,15 @@
 import asyncio
+from math import exp
 from typing import AsyncIterable
 
-from src.service.event import Event
+import numpy as np
+
+from src.logger import simple_custom_logger
+from src.terminology.event import Event
 from src.llm import create_completion_openai
-from src.service.terminology import Definition, DefinitionGenerator, PartialDefinitionGenerated, OccurrenceResolved
+from src.terminology.models import Term
+from src.terminology.terminology import Definition, DefinitionGenerator, PartialDefinitionGenerated, OccurrenceResolved, \
+    Blackboard
 import re
 
 developer_prompt = """
@@ -12,20 +18,30 @@ Bleibe präzise und kurz. Nutze nur die Informationen aus dem gegebenen Kontext.
 Wenn nicht genug Information vorhanden ist oder zu generell, vage oder nicht fachspezifisch ist, gebe "ERROR" aus.
 """
 
+logger = simple_custom_logger("DEFGEN")
+
 class OpenAIDefinitionGenerator(DefinitionGenerator):
 
     WINDOW_START: int = 200
     WINDOW_END: int = 300
 
+    CERTAINTY_THRESHOLD: int = 0.05
+
     async def generate_definition_from_source(self, term: str, context: str) -> str | None:
-        response = await create_completion_openai(
-            model="gpt-4o-mini",
+        response, log_probs = await create_completion_openai(
             messages=[
-                ("system", f"{developer_prompt}"),
+                ("developer", f"{developer_prompt}"),
                 ("user", f"{context}"),
                 ("user", f"Definiere den Begriff \"{term}\"."),
             ],
+            logprobs=True
         )
+
+        for token in log_probs.content[0].top_logprobs:
+            prob = np.exp(token.logprob)
+            if token.token == "ERROR" and prob > self.CERTAINTY_THRESHOLD:
+                # logger.debug(f"Generation uncertain. Probability of 'ERROR' token {prob}>{self.CERTAINTY_THRESHOLD}!")
+                return None
 
         if response == "ERROR":
             return None
@@ -62,3 +78,31 @@ class OpenAIDefinitionGenerator(DefinitionGenerator):
                     definition=definition
                 )
 
+
+
+if __name__ == "__main__":
+    blackboard = Blackboard()
+    generator = OpenAIDefinitionGenerator(
+        blackboard=blackboard
+    )
+
+    context = """
+
+Abstellen
+
+Züge und Triebfahrzeuge sind abgestellt, wenn sie nicht mit einem Triebfahrzeugführer besetzt sind oder nicht gesteuert werden. Wagen sind abgestellt, sofern sie nicht in Züge eingestellt sind oder nicht rangiert werden.
+
+Abstoßen
+
+Abstoßen ist das Bewegen geschobener, nicht mit einem arbeitenden Triebfahrzeug gekuppelter Fahrzeuge durch Beschleunigen, so dass die Fahrzeuge allein weiterfahren, nachdem das Triebfahrzeug angehalten hat.
+
+""".strip()
+
+    term = blackboard.add_term("Abstellen")
+    source = blackboard.add_text_source(text=context)
+
+    async def test():
+        async for event in generator.activate(OccurrenceResolved(term=term, source=source)):
+            print(f"Event {event}")
+
+    asyncio.run(test())
