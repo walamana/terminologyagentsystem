@@ -2,14 +2,16 @@ from typing import Tuple
 
 import backoff
 import dotenv
-from openai import OpenAI, AsyncOpenAI, RateLimitError
-import httpx
-import json
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionContentPartParam
+from openai import AsyncOpenAI, RateLimitError
 
-dotenv.load_dotenv()
+client: AsyncOpenAI | None = None
+def get_openai_client() -> AsyncOpenAI:
+    global client
+    if client is None:
+        dotenv.load_dotenv()
+        client = AsyncOpenAI()
+    return client
 
-client = AsyncOpenAI()
 
 @backoff.on_exception(backoff.expo, RateLimitError)
 async def create_completion_openai(
@@ -23,7 +25,7 @@ async def create_completion_openai(
                              store=False,
                             logprobs=False,
                              ):
-    response = await client.chat.completions.create(
+    response = await get_openai_client().chat.completions.create(
         model=model,
         messages=[
             {
