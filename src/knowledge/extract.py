@@ -12,7 +12,7 @@ logger = simple_custom_logger("TERMEXTRACTOR")
 
 class CValue(TermExtractor):
 
-    nlp: Language
+    nlp: Language = None
 
     def model_post_init(self, __context: Any) -> None:
         self.nlp = spacy.load("de_core_news_md")
