@@ -4,10 +4,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from src.knowledge.definition.generator import PartialDefinitionGenerated
-from src.terminology.event import Event, CombinedDefinitionGenerated
+from src.knowledge.openai.definition.generator import PartialDefinitionGenerated
 from src.llm import create_completion_openai
 from src.logger import simple_custom_logger
+from src.terminology.event import Event, CombinedDefinitionGenerated
 from src.terminology.models import Definition, Term
 from src.terminology.terminology import DefinitionCombiner, Blackboard
 

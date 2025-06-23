@@ -1,16 +1,14 @@
 import asyncio
-from math import exp
+import re
 from typing import AsyncIterable
 
 import numpy as np
 
+from src.llm import create_completion_openai
 from src.logger import simple_custom_logger
 from src.terminology.event import Event
-from src.llm import create_completion_openai
-from src.terminology.models import Term
 from src.terminology.terminology import Definition, DefinitionGenerator, PartialDefinitionGenerated, OccurrenceResolved, \
     Blackboard
-import re
 
 developer_prompt = """
 Erstelle eine Definition für einen Begriff anhand von gegebenen Textausschnitten.

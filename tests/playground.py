@@ -4,11 +4,10 @@ from typing import Annotated, List, Type, AsyncIterable, Dict
 
 from pydantic import Field
 
-from src.knowledge.definition.generator import OpenAIDefinitionGenerator
-
 from src.knowledge.document import Pdf2Text
+from src.knowledge.openai.definition.generator import OpenAIDefinitionGenerator
+from src.knowledge.openai.extract import OpenAIExtractor
 from src.terminology.event import Event
-from src.knowledge.extract import OpenAIExtractor
 from src.terminology.terminology import Controller, KnowledgeSource, \
     TermExtracted, Term, TextExtracted
 

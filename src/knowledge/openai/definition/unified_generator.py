@@ -1,10 +1,8 @@
 import asyncio
-import os
 import re
 from typing import Annotated, AsyncIterable
 from uuid import UUID
 
-import tiktoken
 from pydantic import Field
 
 from src.llm import create_completion_openai
