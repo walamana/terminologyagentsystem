@@ -8,8 +8,9 @@ from src.knowledge.definition.combiner import OpenAIDefinitionCombiner
 from src.knowledge.definition.generator import OpenAIDefinitionGenerator
 from src.knowledge.definition.resolver import CSVDefinitionResolver
 from src.knowledge.document import Pdf2Text
-from src.knowledge.extract import OpenAIExtractor, CValue
-from src.knowledge.lemmatize import OpenAILemmatizer
+from src.knowledge.extract import CValue
+from src.knowledge.openai.extract import OpenAIExtractor
+from src.knowledge.openai.lemmatize import OpenAILemmatizer
 from src.terminology.event import DocumentAdded, TextExtracted
 from src.terminology.terminology import Controller, Blackboard
 
