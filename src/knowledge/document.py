@@ -1,27 +1,32 @@
 import asyncio
 import os
 import tempfile
+from importlib import import_module
 from pathlib import Path
 from typing import AsyncIterable
 
 from pypdf import PdfReader, PdfWriter
-from docling.document_converter import  DocumentConverter
 
-from src.terminology.event import Event
 from src.logger import logger
+from src.terminology.event import Event
 from src.terminology.terminology import DocumentAdded, TextExtracted, TextExtractor, Blackboard
 
-# The internal lock of tqdm has to be initialized, otherwise docling fails. TODO: why exactly?
-# see: https://github.com/tqdm/tqdm/issues/457
-from tqdm import tqdm
-tqdm(disable=True, total=0)
-
+__docling_module = None
+def get_document_converter():
+    global __docling_module
+    if __docling_module is None:
+        __docling_module = import_module("docling.document_converter")
+        # The internal lock of tqdm has to be initialized, otherwise docling fails. TODO: why exactly?
+        # see: https://github.com/tqdm/tqdm/issues/457
+        from tqdm import tqdm
+        tqdm(disable=True, total=0)
+    return __docling_module.DocumentConverter
 
 
 class Pdf2Text(TextExtractor):
 
     def extract_text(self, path: str):
-        converter = DocumentConverter()
+        converter = get_document_converter()()
         doc = converter.convert(Path(path)).document
         return path, doc.export_to_markdown()
 
