@@ -26,6 +26,7 @@ class Term(BaseModel):
     id: Annotated[UUID, Field(default_factory=uuid.uuid4)]
     text: str
     normalization: Optional[str] = None
+    variations: Annotated[List[str], Field(default_factory=list)]
     occurrences: Annotated[List[UUID], Field(default_factory=list)]
     definitions: Annotated[List[Definition], Field(default_factory=list)]
 

@@ -121,10 +121,16 @@
 </div>`
             }
 
+            var variationHtml = ""
+            if(term.variations) {
+                variationHtml = term.variations.join(", ")
+            }
+
             termsHtml += `
 <div class="term">
     <span class="text">${term.normalization ? term.normalization : term.text}</span>
     <span class="lemma">Lemmatized: <strong>${term.normalization}</strong>, Occures in ${term.occurrences.length} sources</span>
+    <span class="variations">Variations: ${variationHtml}</span>
     <span class="occurrences"></span>
     <div class="definitions">
         ${definitionHtml}
@@ -159,7 +165,7 @@
                 font-size: 1.5rem;
                 font-weight: bold;
             }
-            .lemma, .occurrences {
+            .lemma, .occurrences, .variations {
                 opacity: 0.5;
             }
             .definitions {
