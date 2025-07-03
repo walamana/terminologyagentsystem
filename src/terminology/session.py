@@ -23,11 +23,11 @@ class Session(BaseModel):
     policy: KnowledgeSourcePolicy
 
     def setup_controller_document_processing(self, controller: Controller) -> Controller:
-        controller.register_knowledge_source(CSVDefinitionResolver)
         controller.register_knowledge_source(Pdf2Text)
         return controller
 
     def setup_controller_term_extraction(self, controller: Controller) -> Controller:
+        controller.register_knowledge_source(CSVDefinitionResolver)
         if self.policy.use_llm:
             controller.register_knowledge_source(OpenAIExtractor)
             controller.register_knowledge_source(OpenAILemmatizer)

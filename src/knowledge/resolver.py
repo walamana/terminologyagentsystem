@@ -13,10 +13,10 @@ class CSVDefinitionResolver(DefinitionResolver):
     source: Optional[TextSource] = None
 
     def model_post_init(self, __context: Any) -> None:
-        langs = ["de", "en"]
+        langs = ["de"]
         for lang in langs:
             with open(f"data/{lang}-glossary.csv", "r") as f:
-                reader = csv.DictReader(f)
+                reader = csv.DictReader(f, delimiter="\t")
                 for row in reader:
                     self.definitions[row["0"]] = row["1"]
         self.source = self.blackboard.add_text_source("DICTIONARY")
