@@ -1,10 +1,10 @@
-import asyncio
-from typing import AsyncIterable
 from unittest import TestCase
 
-from src.knowledge.extract import OpenAIExtractor
+from src.knowledge.openai.extract import OpenAIExtractor
 from src.terminology.event import TextExtracted, TermExtracted, OccurrenceResolved
 from src.terminology.terminology import Blackboard
+from tests.util import collect_async
+
 
 class TestOpenAIExtractor(TestCase):
 
@@ -29,7 +29,7 @@ class TestOpenAIExtractor(TestCase):
         to be emitted for every term found in the given text."""
         input = """Wenn im Zug außergewöhnliche Sendungen oder außergewöhnliche Fahrzeuge eingestellt sind, müssen sich deren Beförderungsanordnungen beim Zug befinden und die Nummern der Beförderungsanordnungen dem Fahrdienstleiter mitgeteilt worden sein."""
         initial_event = TextExtracted(text=input)
-        actual_events = self.collect(self.extractor.activate(initial_event))
+        actual_events = collect_async(self.extractor.activate(initial_event))
         actual_terms = [event.term.text for event in actual_events if type(event) is TermExtracted]
 
         oracleTerms = ["Zug", "außergewöhnliche Sendung", "außergewöhnliches Fahrzeug", "Beförderungsanordnung", "Nummer der Beförderungsanordnung", "Fahrdienstleiter"]
@@ -75,12 +75,4 @@ class TestOpenAIExtractor(TestCase):
                 self.assertIn(event.term.text, actual_terms)
                 self.assertIn(event.source, self.blackboard.sources, f"Source not on blackboard {event.source}")
 
-
-
-    @staticmethod
-    def collect(iterable: AsyncIterable):
-        """Synchronously collect all items in the AsyncIterable and return them as a list."""
-        async def do():
-            return [event async for event in iterable]
-        return asyncio.run(do())
 

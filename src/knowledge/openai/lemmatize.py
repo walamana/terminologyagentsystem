@@ -1,23 +1,17 @@
-from typing import AsyncIterable
-
+from src.knowledge.llm.lemmatize import LLMTermLemmatizer, DEVELOPER_PROMPT_SHORT, EXAMPLES
 from src.llm import create_completion_openai
-from src.prompts.lemmatize import DEVELOPER_PROMPT_SHORT, EXAMPLES
-from src.terminology.event import TermExtracted, Event, TermNormalized
-from src.terminology.terminology import TermNormalizer
 
 
-class OpenAILemmatizer(TermNormalizer):
+class OpenAILemmatizer(LLMTermLemmatizer):
 
-    async def activate(self, event: TermExtracted) -> AsyncIterable[Event]:
+    async def get_llm_response(self, term: str) -> str:
         messages = [
             ("system", f"{DEVELOPER_PROMPT_SHORT}"),
             *EXAMPLES,
             # ("user", example_user),
             # ("assistant", output_assistant),
-            ("user", event.term.text)
+            ("user", term)
         ]
-        response = await create_completion_openai(
+        return await create_completion_openai(
             messages=messages,
         )
-        event.term.normalization = response
-        yield TermNormalized(term=event.term)

@@ -1,31 +1,39 @@
-from typing import Tuple
+import asyncio
+from typing import AsyncIterable, Tuple
 
-import backoff
 import dotenv
-from openai import AsyncOpenAI, RateLimitError
+from openai import OpenAI
 
-client: AsyncOpenAI | None = None
-def get_openai_client() -> AsyncOpenAI:
+SEED = 42
+
+def collect_async(iterable: AsyncIterable):
+    """Synchronously collect all items in the AsyncIterable and return them as a list."""
+    async def do():
+        return [event async for event in iterable]
+    return asyncio.run(do())
+
+
+client: OpenAI | None = None
+def get_openai_client() -> OpenAI:
     global client
     if client is None:
         dotenv.load_dotenv()
-        client = AsyncOpenAI()
+        client = OpenAI()
     return client
 
 
-@backoff.on_exception(backoff.expo, RateLimitError)
-async def create_completion_openai(
+def create_completion_openai_sync(
                              messages: list[Tuple[str, str]],
                              model: str = "gpt-4o-mini",
-                             temperature=0,
+                             temperature=0.0,
                              max_completion_tokens=2048,
-                             top_p=0,
+                             top_p=0.0,
                              frequency_penalty=0,
                              presence_penalty=0,
                              store=False,
                             logprobs=False,
                              ):
-    response = await get_openai_client().chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=model,
         messages=[
             {
@@ -41,6 +49,7 @@ async def create_completion_openai(
         presence_penalty=presence_penalty,
         store=store,
         logprobs=logprobs,
+        seed=SEED,
         top_logprobs=5 if logprobs else None
     )
 

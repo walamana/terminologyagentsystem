@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from src.knowledge.definition.resolver import CSVDefinitionResolver
 from src.knowledge.document import Pdf2Text
-from src.knowledge.extract import CValue
 from src.knowledge.openai.definition.combiner import OpenAIDefinitionCombiner
 from src.knowledge.openai.definition.generator import OpenAIDefinitionGenerator
 from src.knowledge.openai.extract import OpenAIExtractor
@@ -21,22 +20,61 @@ class KnowledgeSourcePolicy(BaseModel):
 
 class Session(BaseModel):
     id: Annotated[UUID, Field(default_factory=uuid.uuid4)]
-    controller: Controller
+    policy: KnowledgeSourcePolicy
+
+    def setup_controller_document_processing(self, controller: Controller) -> Controller:
+        controller.register_knowledge_source(CSVDefinitionResolver)
+        controller.register_knowledge_source(Pdf2Text)
+        return controller
+
+    def setup_controller_term_extraction(self, controller: Controller) -> Controller:
+        if self.policy.use_llm:
+            controller.register_knowledge_source(OpenAIExtractor)
+            controller.register_knowledge_source(OpenAILemmatizer)
+        return controller
+
+    def setup_controller_definition_generation(self, controller: Controller) -> Controller:
+        if self.policy.use_llm:
+            controller.register_knowledge_source(OpenAIDefinitionGenerator)
+            controller.register_knowledge_source(OpenAIDefinitionCombiner)
+        return controller
+
 
     async def process_document(self, file_path: str) -> Blackboard:
-        await self.controller.emit(DocumentAdded(path=file_path))
+        controller = Controller()
+        self.setup_controller_document_processing(controller)
+        self.setup_controller_term_extraction(controller)
+        self.setup_controller_definition_generation(controller)
 
-        return self.controller.blackboard
+        await controller.emit(DocumentAdded(path=file_path))
+
+        return controller.blackboard
 
 
     async def retrieve_term_definition(self, text: str, context: Optional[str] = None) -> Blackboard:
+        controller = Controller()
+        self.setup_controller_term_extraction(controller)
+        self.setup_controller_definition_generation(controller)
+
         # TODO: Make proper use of context!!!
         if context is not None:
-            self.controller.blackboard.add_text_source(context)
+            controller.blackboard.add_text_source(context)
 
-        await self.controller.emit(TextExtracted(text=text))
+        await controller.emit(TextExtracted(text=text))
 
-        return self.controller.blackboard
+        return controller.blackboard
+
+    async def extract_terminology(self, text: str, context: Optional[str] = None) -> Blackboard:
+        controller = Controller()
+        self.setup_controller_term_extraction(controller)
+
+        # TODO: Make proper use of context!!!
+        if context is not None:
+            controller.blackboard.add_text_source(context)
+
+        await controller.emit(TextExtracted(text=text))
+
+        return controller.blackboard
 
     model_config = {
         "arbitrary_types_allowed": True,
@@ -50,27 +88,15 @@ class SessionManager:
     @staticmethod
     def setup_controller_llm(controller: Controller):
         controller.register_knowledge_source(OpenAIExtractor)
-        controller.register_knowledge_source(CValue)
+        # controller.register_knowledge_source(CValue)
         controller.register_knowledge_source(OpenAILemmatizer)
         # TODO: Occurrence Resolver
-        controller.register_knowledge_source(OpenAIDefinitionGenerator)
-        controller.register_knowledge_source(OpenAIDefinitionCombiner)
-
-    @staticmethod
-    def base_controller() -> Controller:
-        controller = Controller()
-        controller.register_knowledge_source(CSVDefinitionResolver)
-        controller.register_knowledge_source(Pdf2Text)
-        return controller
+        # controller.register_knowledge_source(OpenAIDefinitionGenerator)
+        # controller.register_knowledge_source(OpenAIDefinitionCombiner)
 
     @classmethod
     def create_session(cls, policy: KnowledgeSourcePolicy) -> Session:
-        controller = cls.base_controller()
-
-        if policy.use_llm:
-            cls.setup_controller_llm(controller)
-
-        session = Session(controller=controller)
+        session = Session(policy=policy)
         cls.sessions[session.id] = session
         return session
 
