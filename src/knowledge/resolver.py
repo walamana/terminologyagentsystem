@@ -1,4 +1,3 @@
-import csv
 from typing import Annotated, AsyncIterable, Optional, Any
 
 from pydantic import Field
@@ -16,9 +15,10 @@ class CSVDefinitionResolver(DefinitionResolver):
         langs = ["de"]
         for lang in langs:
             with open(f"data/{lang}-glossary.csv", "r") as f:
-                reader = csv.DictReader(f, delimiter="\t")
-                for row in reader:
-                    self.definitions[row["0"]] = row["1"]
+                data = f.read().split("\n")
+                for row in data:
+                    key, value = row.split("\t")
+                    self.definitions[key] = value
         self.source = self.blackboard.add_text_source("DICTIONARY")
 
     async def activate(self, event: Event) -> AsyncIterable[Event]:

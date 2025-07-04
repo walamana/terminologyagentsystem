@@ -4,12 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from src.knowledge.definition.resolver import CSVDefinitionResolver
 from src.knowledge.document import Pdf2Text
 from src.knowledge.openai.definition.combiner import OpenAIDefinitionCombiner
 from src.knowledge.openai.definition.generator import OpenAIDefinitionGenerator
 from src.knowledge.openai.extract import OpenAIExtractor
 from src.knowledge.openai.lemmatize import OpenAILemmatizer
+from src.knowledge.resolver import CSVDefinitionResolver
 from src.terminology.event import DocumentAdded, TextExtracted
 from src.terminology.terminology import Controller, Blackboard
 

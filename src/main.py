@@ -28,7 +28,7 @@ class ProcessTextRequest(BaseModel):
 
 @app.post("/processText")
 async def process_text(request: ProcessTextRequest) -> Blackboard:
-    session = SessionManager.create_session(KnowledgeSourcePolicy())
+    session = SessionManager.create_session(KnowledgeSourcePolicy(use_llm=True))
     blackboard = await session.retrieve_term_definition(request.text, context=request.context)
     SessionManager.remove_session(session_id=session.id)
     return blackboard
