@@ -21,13 +21,20 @@ app = FastAPI()
 
 app.mount("/demo", StaticFiles(directory="html", html=True), name="demo")
 
-
-class ProcessTextRequest(BaseModel):
+class TextRequestBody(BaseModel):
     text: str
     context: Optional[str] = None
 
+
+@app.post("/extractTerminology")
+async def process_text(request: TextRequestBody) -> Blackboard:
+    session = SessionManager.create_session(KnowledgeSourcePolicy(use_llm=True))
+    blackboard = await session.extract_terminology(request.text, context=request.context)
+    SessionManager.remove_session(session_id=session.id)
+    return blackboard
+
 @app.post("/processText")
-async def process_text(request: ProcessTextRequest) -> Blackboard:
+async def process_text(request: TextRequestBody) -> Blackboard:
     session = SessionManager.create_session(KnowledgeSourcePolicy(use_llm=True))
     blackboard = await session.retrieve_term_definition(request.text, context=request.context)
     SessionManager.remove_session(session_id=session.id)

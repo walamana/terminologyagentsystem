@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from src.knowledge.document import Pdf2Text
+from src.knowledge.extract import CValue
 from src.knowledge.openai.definition.combiner import OpenAIDefinitionCombiner
 from src.knowledge.openai.definition.generator import OpenAIDefinitionGenerator
 from src.knowledge.openai.extract import OpenAIExtractor
@@ -31,6 +32,8 @@ class Session(BaseModel):
         if self.policy.use_llm:
             controller.register_knowledge_source(OpenAIExtractor)
             controller.register_knowledge_source(OpenAILemmatizer)
+        else:
+            controller.register_knowledge_source(CValue)
         return controller
 
     def setup_controller_definition_generation(self, controller: Controller) -> Controller:

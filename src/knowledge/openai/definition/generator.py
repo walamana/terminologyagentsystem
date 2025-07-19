@@ -10,11 +10,6 @@ from src.terminology.terminology import OccurrenceResolved, \
 
 class OpenAIDefinitionGenerator(LLMDefinitionGenerator):
 
-    WINDOW_START: int = 200
-    WINDOW_END: int = 300
-
-    CERTAINTY_THRESHOLD: int = 0.05
-
     async def generate_definition_from_source(self, term: str, context: str) -> str | None:
         response, log_probs = await create_completion_openai(
             messages=[
@@ -55,6 +50,8 @@ Abstoßen
 Abstoßen ist das Bewegen geschobener, nicht mit einem arbeitenden Triebfahrzeug gekuppelter Fahrzeuge durch Beschleunigen, so dass die Fahrzeuge allein weiterfahren, nachdem das Triebfahrzeug angehalten hat.
 
 """.strip()
+
+    context = "Dies gilt auch für das Abstoßen, sofern in örtlichen Zusätzen nicht Ausnahmen zugelassen sind."
 
     term = blackboard.add_term("Abstellen")
     source = blackboard.add_text_source(text=context)

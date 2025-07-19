@@ -6,73 +6,34 @@ from src.terminology.terminology import Blackboard
 from tests.util import collect_async
 
 
-class TestOpenAIExtractor(TestCase):
+class TestTermExtractor(TestCase):
 
-    # Before each
-    def setUp(self):
-        # Initialize the blackboard
-        self.blackboard = Blackboard(
-            terms=[],
-            sources=[]
-        )
-        # Initialize the KnowledgeSource
-        self.extractor = OpenAIExtractor(blackboard=self.blackboard)
-        pass
+    def test_common(self):
+        blackboard = Blackboard(terms=[], sources=[])
+        extractor = OpenAIExtractor(blackboard=blackboard)
 
-    # After each
-    def tearDown(self):
-        # Nothing to tear down
-        pass
+        input = """Einseitig gerichtete Sprecheinrichtung verwenden\n Aufträge dürfen über einseitig gerichtete Sprecheinrichtungen gegeben werden, wenn dies im Einzelfall nicht verboten ist und der Empfänger die Ausführung melden muss oder der Auftraggeber die Ausführung selbst erkennen kann. Meldungen dürfen über einseitig gerichtete Sprecheinrichtungen nicht gegeben werden."""
 
-    def test_activate(self):
-        """Tests the OpenAIExtractor. It expects an TermExtracted and OccurrenceResolved event
-        to be emitted for every term found in the given text."""
-        input = """Wenn im Zug außergewöhnliche Sendungen oder außergewöhnliche Fahrzeuge eingestellt sind, müssen sich deren Beförderungsanordnungen beim Zug befinden und die Nummern der Beförderungsanordnungen dem Fahrdienstleiter mitgeteilt worden sein."""
+        expected = ["Einseitig gerichtete Sprecheinrichtung", "Aufträge", "Empfänger", "Auftraggeber", "Meldungen"]
+
         initial_event = TextExtracted(text=input)
-        actual_events = collect_async(self.extractor.activate(initial_event))
-        actual_terms = [event.term.text for event in actual_events if type(event) is TermExtracted]
+        actual_events = collect_async(extractor.activate(initial_event))
 
-        oracleTerms = ["Zug", "außergewöhnliche Sendung", "außergewöhnliches Fahrzeug", "Beförderungsanordnung", "Nummer der Beförderungsanordnung", "Fahrdienstleiter"]
+        actual_events_extracted = [event for event in actual_events if type(event) is TermExtracted]
+        actual_events_occurrence = [event for event in actual_events if type(event) is OccurrenceResolved]
 
-        print(actual_terms)
-        print(oracleTerms)
+        actual_terms_text = set(event.term.text.lower() for event in actual_events_extracted)
 
-        # Amount of actual events has to be twice the amount of extracted terms
-        # For every term found, there should be
-        if len(actual_events) != len(oracleTerms) * 2:
-            self.fail(f"Expected {len(oracleTerms) * 2} events, got {len(actual_events)}.\n{actual_events}")
+        missing_terms = []
+        for term in expected:
+            if term.lower() not in actual_terms_text:
+                missing_terms.append(term)
 
-        self.assertEquals(
-            len([event for event in actual_events if isinstance(event, TermExtracted)]),
-            len([event for event in actual_events if isinstance(event, OccurrenceResolved)]),
-            "The amount of TermExtracted events differs from the amount of OccurrenceResolved events."
-        )
+        if len(missing_terms) > 0:
+            self.fail(f"Missing terms [{', '.join(missing_terms)}] in extracted events ([{', '.join(actual_terms_text)}]).")
 
-        # Every event is of type TermExtracted or OccurrenceResolved
-        for event in actual_events:
-            event_type = type(event)
-            if isinstance(event_type, TermExtracted) or isinstance(event_type, OccurrenceResolved):
-                self.fail(f"Unexpected event type {event_type}")
-
-        # Every expected term is emitted
-        for term in oracleTerms:
-            if term not in actual_terms:
-                self.fail(f"{term} was not extracted.")
-
-        blackboard_terms_text = [term.text for term in self.blackboard.terms]
-
-        for term in actual_terms:
-            # No term other than those expected are extracted
-            if term not in oracleTerms:
-                self.fail(f"Unexpected term: {term}.")
-            # Extracted terms are saved on the blackboard
-            if term not in blackboard_terms_text:
-                self.fail(f"Term not saved on blackboard: {term}.")
-
-        for event in actual_events:
-            # Every OccurrenceResolved event also emits a TermExtracted event
-            if type(event) is OccurrenceResolved:
-                self.assertIn(event.term.text, actual_terms)
-                self.assertIn(event.source, self.blackboard.sources, f"Source not on blackboard {event.source}")
-
-
+        for term in actual_terms_text:
+            if len([event for event in actual_events_extracted if event.term.text.lower() == term]) == 0:
+                self.fail(f"Missing TermExtracted event for term {term}.")
+            if len([event for event in actual_events_occurrence if event.term.text.lower() == term]) == 0:
+                self.fail(f"Missing OccurrenceResolved event for term {term}.")

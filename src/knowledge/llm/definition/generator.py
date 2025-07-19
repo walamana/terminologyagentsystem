@@ -8,8 +8,8 @@ from src.terminology.terminology import Definition, DefinitionGenerator, Partial
 
 DEVELOPER_PROMPT = """
 Erstelle eine Definition für einen Begriff anhand von gegebenen Textausschnitten.
-Bleibe präzise und kurz. Nutze nur die Informationen aus dem gegebenen Kontext. 
-Wenn nicht genug Information vorhanden ist oder zu generell, vage oder nicht fachspezifisch ist, gebe "ERROR" aus.
+Bleibe präzise und kurz. Nutze nur die Informationen aus dem gegebenen Text. Nutze kein gelerntes Wissen aus deinen Trainingsdaten!
+Wenn nicht genug Information vorhanden ist oder die Definition zu generell, vage oder nicht fachspezifisch ist, gebe "ERROR" aus.
 """
 
 logger = simple_custom_logger("DEFGEN")
