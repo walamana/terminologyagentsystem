@@ -50,7 +50,7 @@ def create_completion_openai_sync(
         store=store,
         logprobs=logprobs,
         seed=SEED,
-        top_logprobs=5 if logprobs else None
+        top_logprobs=20 if logprobs else None
     )
 
     if logprobs:

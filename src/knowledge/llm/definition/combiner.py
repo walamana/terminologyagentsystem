@@ -40,7 +40,7 @@ class LLMDefinitionCombiner(DefinitionCombiner):
         if event.term.id not in self.locks:
             self.locks[event.term.id] = asyncio.Lock()
         async with self.locks[event.term.id]:
-            logger.info(f"Locking {event.term.normalized_or_text()} definition combiner")
+            logger.info(f"Locking {event.term.normalized_or_text()} definition combiner {id(event)}")
             has_verified_definition = next((definition for definition in event.term.definitions if definition.verified), None) is not None
 
             partial_definitions = [definition for definition in event.term.definitions if definition.is_partial()]

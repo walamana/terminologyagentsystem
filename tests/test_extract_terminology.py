@@ -90,6 +90,7 @@ class TestExtractTerminology(unittest.TestCase):
 
             print(response)
             probs = {token.token: float(np.exp(token.logprob)) for token in logprobs.content[0].top_logprobs if token.token == "TRUE" or token.token == "FALSE"}
+            print(probs)
             total_end = sum(probs.values())
             normalized_probs = {token: value / total_end for token, value in probs.items()}
             probs_all.append(normalized_probs["FALSE"])

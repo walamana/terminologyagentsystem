@@ -12,6 +12,7 @@ def get_openai_client() -> AsyncOpenAI:
         client = AsyncOpenAI()
     return client
 
+seed = 42
 
 @backoff.on_exception(backoff.expo, RateLimitError)
 async def create_completion_openai(
@@ -41,7 +42,8 @@ async def create_completion_openai(
         presence_penalty=presence_penalty,
         store=store,
         logprobs=logprobs,
-        top_logprobs=5 if logprobs else None
+        top_logprobs=5 if logprobs else None,
+        seed=seed,
     )
 
     if logprobs:

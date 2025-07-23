@@ -7,12 +7,10 @@ from pydantic import Field
 from src.knowledge.llm.definition.combiner import LLMDefinitionCombiner, RELEVANCE_USER_PROMPT, COMBINE_SYSTEM_PROMPT, \
     COMBINE_USER_PROMPT
 from src.llm import create_completion_openai
-from src.logger import simple_custom_logger
 from src.terminology.event import PartialDefinitionGenerated
 from src.terminology.models import Definition, Term
 from src.terminology.terminology import Blackboard
 
-logger = simple_custom_logger("COMBINER")
 
 class OpenAIDefinitionCombiner(LLMDefinitionCombiner):
 
